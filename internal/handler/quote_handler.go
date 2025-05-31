@@ -30,6 +30,7 @@ func (h *QuoteHandler) CreateQuote(w http.ResponseWriter, r *http.Request) {
 	err = utils.ValidateQuote(quote)
 	if err != nil {
 		utils.SendError(w, 400, err.Error())
+		return
 	}
 
 	quoteID := h.repo.Add(quote)
@@ -37,11 +38,15 @@ func (h *QuoteHandler) CreateQuote(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(quoteID)
 }
 
-func (h *QuoteHandler) GetQuotes(w http.ResponseWriter, r *http.Request) {
+func (h *QuoteHandler) GetQuotesByAuthor(w http.ResponseWriter, r *http.Request) {
 	author := r.URL.Query().Get("author")
 	var result []models.Quote
 	if author != "" {
 		result = h.repo.GetByAuthor(author)
+	}
+	if result == nil {
+		utils.SendError(w, 400, "автор не найден")
+		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
@@ -66,4 +71,11 @@ func (h *QuoteHandler) GetRandom(w http.ResponseWriter, r *http.Request) {
 	n := rand.Intn(len(quotes))
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(quotes[n])
+}
+
+func (h *QuoteHandler) GetAllQuotes(w http.ResponseWriter, r *http.Request) {
+	quotes := h.repo.GetAll()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(quotes)
 }
